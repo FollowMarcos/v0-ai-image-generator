@@ -2,14 +2,9 @@
 
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { Home, History, LogOut } from "lucide-react"
+import { Home, History } from "lucide-react"
 
 export function TopNavbar() {
-  const handleSignOut = () => {
-    // TODO: Implement sign out functionality
-    console.log("Sign out clicked")
-  }
-
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4">
@@ -31,10 +26,6 @@ export function TopNavbar() {
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Button variant="ghost" size="sm" onClick={handleSignOut}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
-            </Button>
           </div>
         </div>
       </div>

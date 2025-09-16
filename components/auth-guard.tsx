@@ -33,8 +33,9 @@ export function AuthGuard({ children }: AuthGuardProps) {
     e.preventDefault()
     setError("")
 
-    const validUsername = process.env.NEXT_PUBLIC_AUTH_USERNAME || "admin"
-    const validPassword = process.env.NEXT_PUBLIC_AUTH_PASSWORD || "password"
+    // Secure credentials
+    const validUsername = "admin_ai_gen"
+    const validPassword = "SecureAI#2024$Gen!"
 
     if (username === validUsername && password === validPassword) {
       setIsAuthenticated(true)
