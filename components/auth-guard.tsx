@@ -34,8 +34,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
     setError("")
 
     // Secure credentials
-    const validUsername = "admin_ai_gen"
-    const validPassword = "SecureAI#2024$Gen!"
+    const validUsername = "admin"
+    const validPassword = "addsecurepassword"
 
     if (username === validUsername && password === validPassword) {
       setIsAuthenticated(true)
