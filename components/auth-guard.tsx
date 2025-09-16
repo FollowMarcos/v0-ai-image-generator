@@ -34,8 +34,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
     setError("")
 
     // Secure credentials
-    const validUsername = "admin"
-    const validPassword = "addsecurepassword"
+    const validUsername = process.env.NEXT_PUBLIC_AUTH_USERNAME || "admin"
+    const validPassword = process.env.NEXT_PUBLIC_AUTH_PASSWORD || "changeme"
 
     if (username === validUsername && password === validPassword) {
       setIsAuthenticated(true)
