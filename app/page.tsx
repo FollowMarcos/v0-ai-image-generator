@@ -162,6 +162,8 @@ export default function Home() {
       console.log("[v0] Processed prompt:", processedPrompt)
       console.log("[v0] Image URLs count:", imageUrls.length)
 
+      const effectiveMaxImages = Math.max(numImages, maxImages)
+
       const payload = {
         prompt: processedPrompt,
         imageUrls,
@@ -169,7 +171,7 @@ export default function Home() {
         numImages,
         model: "edit", // Force model to be "edit" since we only do image-to-image
         seed,
-        maxImages,
+        maxImages: effectiveMaxImages,
         syncMode,
         enableSafetyChecker,
         customWidth,
