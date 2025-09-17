@@ -253,38 +253,56 @@ export function HistoryGallery({ onRemix, onReusePrompt, onCopyPrompt }: History
             <DropdownMenuContent>
               <DropdownMenuCheckboxItem
                 checked={filterBySize === "all"}
-                onCheckedChange={(checked) => checked && setFilterBySize("all")}
+                onCheckedChange={(checked) => {
+                  console.log("[v0] All sizes filter clicked, checked:", checked)
+                  if (checked) setFilterBySize("all")
+                }}
               >
                 All Sizes
               </DropdownMenuCheckboxItem>
               <DropdownMenuSeparator />
               <DropdownMenuCheckboxItem
                 checked={filterBySize === "1:1"}
-                onCheckedChange={(checked) => checked && setFilterBySize("1:1")}
+                onCheckedChange={(checked) => {
+                  console.log("[v0] 1:1 filter clicked, checked:", checked)
+                  if (checked) setFilterBySize("1:1")
+                }}
               >
                 Square (1:1)
               </DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem
                 checked={filterBySize === "4:3"}
-                onCheckedChange={(checked) => checked && setFilterBySize("4:3")}
+                onCheckedChange={(checked) => {
+                  console.log("[v0] 4:3 filter clicked, checked:", checked)
+                  if (checked) setFilterBySize("4:3")
+                }}
               >
                 Landscape (4:3)
               </DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem
                 checked={filterBySize === "3:4"}
-                onCheckedChange={(checked) => checked && setFilterBySize("3:4")}
+                onCheckedChange={(checked) => {
+                  console.log("[v0] 3:4 filter clicked, checked:", checked)
+                  if (checked) setFilterBySize("3:4")
+                }}
               >
                 Portrait (3:4)
               </DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem
                 checked={filterBySize === "16:9"}
-                onCheckedChange={(checked) => checked && setFilterBySize("16:9")}
+                onCheckedChange={(checked) => {
+                  console.log("[v0] 16:9 filter clicked, checked:", checked)
+                  if (checked) setFilterBySize("16:9")
+                }}
               >
                 Widescreen (16:9)
               </DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem
                 checked={filterBySize === "custom"}
-                onCheckedChange={(checked) => checked && setFilterBySize("custom")}
+                onCheckedChange={(checked) => {
+                  console.log("[v0] Custom filter clicked, checked:", checked)
+                  if (checked) setFilterBySize("custom")
+                }}
               >
                 Custom Size
               </DropdownMenuCheckboxItem>
@@ -476,6 +494,7 @@ export function HistoryGallery({ onRemix, onReusePrompt, onCopyPrompt }: History
                     variant="outline"
                     onClick={() => {
                       console.log("[v0] Remix button clicked for item:", item.id)
+                      console.log("[v0] Item data:", item)
                       onRemix?.(item)
                     }}
                     className="flex-1"
@@ -496,7 +515,14 @@ export function HistoryGallery({ onRemix, onReusePrompt, onCopyPrompt }: History
                     Reuse
                   </Button>
 
-                  <Button size="sm" variant="outline" onClick={() => handleCopyPromptClick(item.prompt, item.id)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      console.log("[v0] Copy prompt button clicked:", item.prompt)
+                      handleCopyPromptClick(item.prompt, item.id)
+                    }}
+                  >
                     {copiedPrompts.has(item.id) ? (
                       <Check className="w-4 h-4 text-green-500" />
                     ) : (

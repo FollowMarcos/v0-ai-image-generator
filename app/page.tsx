@@ -21,6 +21,8 @@ import {
   X,
   Shield,
   Send as Sync,
+  GripVertical,
+  Info,
 } from "lucide-react"
 import type { StylePreset } from "@/lib/style-presets"
 import { compressImage, formatFileSize } from "@/lib/image-compression"
@@ -73,6 +75,7 @@ export default function Home() {
   const [showPrompts, setShowPrompts] = useState(false)
   const [showCost, setShowCost] = useState(false)
   const [isDragOver, setIsDragOver] = useState(false)
+  const [draggedImageIndex, setDraggedImageIndex] = useState<number | null>(null)
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -342,6 +345,33 @@ export default function Home() {
     // Could add a toast notification here
   }
 
+  const handleImageDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedImageIndex(index)
+    e.dataTransfer.effectAllowed = "move"
+  }
+
+  const handleImageDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = "move"
+  }
+
+  const handleImageDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault()
+    if (draggedImageIndex === null) return
+
+    const newImages = [...uploadedImages]
+    const draggedImage = newImages[draggedImageIndex]
+    newImages.splice(draggedImageIndex, 1)
+    newImages.splice(dropIndex, 0, draggedImage)
+
+    setUploadedImages(newImages)
+    setDraggedImageIndex(null)
+  }
+
+  const handleImageDragEnd = () => {
+    setDraggedImageIndex(null)
+  }
+
   return (
     <AuthGuard>
       <div className="min-h-screen bg-background">
@@ -355,28 +385,55 @@ export default function Home() {
                 onDrop={handleDrop}
               >
                 <div className="p-6">
-                  {uploadedImages.length > 0 && (
-                    <div className="flex flex-wrap gap-3 mb-4">
-                      {uploadedImages.map((image) => (
-                        <div key={image.id} className="relative group">
-                          <img
-                            src={image.url || "/placeholder.svg"}
-                            alt={image.name}
-                            className="w-16 h-16 object-cover rounded-lg border-2 border-border"
-                          />
-                          <button
-                            onClick={() => removeUploadedImage(image.id)}
-                            className="absolute -top-2 -right-2 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
+                  <div className="flex items-start justify-between mb-4">
+                    {/* Left side - Uploaded images */}
+                    <div className="flex-1">
+                      {uploadedImages.length > 0 && (
+                        <div className="flex flex-wrap gap-3">
+                          {uploadedImages.map((image, index) => (
+                            <div
+                              key={image.id}
+                              className="relative group cursor-move"
+                              draggable
+                              onDragStart={(e) => handleImageDragStart(e, index)}
+                              onDragOver={(e) => handleImageDragOver(e, index)}
+                              onDrop={(e) => handleImageDrop(e, index)}
+                              onDragEnd={handleImageDragEnd}
+                            >
+                              <div className="relative">
+                                <img
+                                  src={image.url || "/placeholder.svg"}
+                                  alt={image.name}
+                                  className="w-16 h-16 object-cover rounded-lg border-2 border-border"
+                                />
+                                <div className="absolute -top-2 -left-2 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold">
+                                  {index + 1}
+                                </div>
+                                <div className="absolute top-1 left-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <GripVertical className="w-3 h-3 text-white drop-shadow-lg" />
+                                </div>
+                                <button
+                                  onClick={() => removeUploadedImage(image.id)}
+                                  className="absolute -top-2 -right-2 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      )}
 
-                  <div className="relative">
-                    <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+                      {uploadedImages.length > 0 && (
+                        <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                          <Info className="w-3 h-3" />
+                          <span>Use @img1, @img2, etc. in your prompt to reference specific images</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Right side - Upload and Generate buttons */}
+                    <div className="flex items-center gap-2 ml-4">
                       <input
                         type="file"
                         multiple
@@ -409,13 +466,15 @@ export default function Home() {
                         {isGenerating ? "Generating..." : "Generate"}
                       </Button>
                     </div>
+                  </div>
 
+                  <div className="relative">
                     <textarea
                       ref={textareaRef}
                       value={prompt}
                       onChange={(e) => setPrompt(e.target.value)}
                       placeholder="Describe your image transformation... or drag & drop images here"
-                      className="w-full min-h-[120px] p-4 pr-32 bg-transparent border-0 resize-none focus:outline-none text-lg placeholder:text-muted-foreground"
+                      className="w-full min-h-[120px] p-4 bg-transparent border-0 resize-none focus:outline-none text-lg placeholder:text-muted-foreground"
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
                           e.preventDefault()
