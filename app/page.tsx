@@ -34,7 +34,8 @@ export default function Home() {
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([])
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
-  const [aspectRatio, setAspectRatio] = useState("square_hd")
+  const [width, setWidth] = useState(1024)
+  const [height, setHeight] = useState(1024)
   const [numImages, setNumImages] = useState(1)
   const [model, setModel] = useState("edit")
   const [prompt, setPrompt] = useState("")
@@ -85,27 +86,24 @@ export default function Home() {
 
   const handleApplyPreset = (preset: StylePreset) => {
     console.log("[v0] Applying preset:", preset)
-    console.log("[v0] Current settings before:", { model, aspectRatio, seed, enableSafetyChecker, syncMode, prompt })
+    console.log("[v0] Current settings before:", { model, width, height, seed, enableSafetyChecker, syncMode, prompt })
 
-    // Only append style information if the prompt is empty or doesn't already contain style keywords
     if (prompt.trim() === "") {
       setPrompt(preset.promptTemplate)
     } else {
-      // Check if the prompt already contains style-related keywords to avoid duplication
       const styleKeywords = ["style", "art", "painting", "digital", "realistic", "cartoon", "anime"]
       const hasStyleKeywords = styleKeywords.some(
         (keyword) => prompt.toLowerCase().includes(keyword) || preset.promptTemplate.toLowerCase().includes(keyword),
       )
 
       if (!hasStyleKeywords) {
-        // Append the style template to the existing prompt
         setPrompt(`${prompt}, ${preset.promptTemplate}`)
       }
-      // If style keywords already exist, don't modify the prompt to avoid redundancy
     }
 
     setModel(preset.settings.model)
-    setAspectRatio(preset.settings.aspectRatio)
+    if (preset.settings.customWidth) setWidth(preset.settings.customWidth)
+    if (preset.settings.customHeight) setHeight(preset.settings.customHeight)
     setSeed(preset.settings.seed)
     setEnableSafetyChecker(preset.settings.enableSafetyChecker)
     setSyncMode(preset.settings.syncMode)
@@ -113,9 +111,10 @@ export default function Home() {
     setCustomHeight(preset.settings.customHeight)
 
     console.log("[v0] Settings after applying preset:", {
-      prompt: prompt, // Log the preserved/enhanced prompt
+      prompt: prompt,
       model: preset.settings.model,
-      aspectRatio: preset.settings.aspectRatio,
+      width,
+      height,
       seed: preset.settings.seed,
       enableSafetyChecker: preset.settings.enableSafetyChecker,
       syncMode: preset.settings.syncMode,
@@ -124,7 +123,8 @@ export default function Home() {
 
   const handleGenerate = async (promptText: string) => {
     const currentSettings = {
-      aspectRatio,
+      width,
+      height,
       numImages,
       model,
       seed,
@@ -147,7 +147,7 @@ export default function Home() {
         uploadedImages: uploadedImages.length,
       })
 
-      console.log("[v0] CLIENT: Aspect ratio selected:", aspectRatio)
+      console.log("[v0] CLIENT: Image dimensions:", { width, height })
       console.log("[v0] CLIENT: Custom dimensions:", { customWidth, customHeight })
 
       if (uploadedImages.length === 0) {
@@ -174,9 +174,10 @@ export default function Home() {
       const payload = {
         prompt: processedPrompt,
         imageUrls,
-        aspectRatio,
+        width,
+        height,
         numImages,
-        model: "edit", // Force model to be "edit" since we only do image-to-image
+        model: "edit",
         seed,
         maxImages: effectiveMaxImages,
         syncMode,
@@ -222,7 +223,8 @@ export default function Home() {
           })),
           settings: {
             model: "edit",
-            aspectRatio,
+            width,
+            height,
             imageCount: numImages,
             seed,
             enableSafetyChecker,
@@ -242,7 +244,8 @@ export default function Home() {
       console.error("Error generating images:", error)
 
       console.log("[v0] Restoring settings after error:", currentSettings)
-      setAspectRatio(currentSettings.aspectRatio)
+      setWidth(currentSettings.width)
+      setHeight(currentSettings.height)
       setNumImages(currentSettings.numImages)
       setModel(currentSettings.model)
       setSeed(currentSettings.seed)
@@ -277,21 +280,32 @@ export default function Home() {
 
               <div className="border-t border-border p-3 bg-muted/10">
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 text-xs">
-                  {/* Aspect Ratio */}
                   <div className="flex items-center gap-2">
                     <Maximize className="w-3 h-3" />
-                    <Select value={aspectRatio} onValueChange={setAspectRatio}>
-                      <SelectTrigger className="h-7 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="square_hd">1:1</SelectItem>
-                        <SelectItem value="portrait_4_3">4:3</SelectItem>
-                        <SelectItem value="portrait_16_9">16:9</SelectItem>
-                        <SelectItem value="landscape_4_3">3:4</SelectItem>
-                        <SelectItem value="landscape_16_9">9:16</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Input
+                      type="number"
+                      placeholder="width"
+                      value={width}
+                      onChange={(e) => setWidth(Number.parseInt(e.target.value) || 1024)}
+                      className="h-7 text-xs"
+                      min="256"
+                      max="2048"
+                      step="64"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Maximize className="w-3 h-3" />
+                    <Input
+                      type="number"
+                      placeholder="height"
+                      value={height}
+                      onChange={(e) => setHeight(Number.parseInt(e.target.value) || 1024)}
+                      className="h-7 text-xs"
+                      min="256"
+                      max="2048"
+                      step="64"
+                    />
                   </div>
 
                   {/* Number of Images */}
@@ -396,7 +410,8 @@ export default function Home() {
                   onApplyPreset={handleApplyPreset}
                   currentSettings={{
                     model,
-                    aspectRatio,
+                    width,
+                    height,
                     seed,
                     enableSafetyChecker,
                     syncMode,
