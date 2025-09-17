@@ -4,12 +4,14 @@ import { useState } from "react"
 import { ImageUpload } from "@/components/image-upload"
 import { PromptInput } from "@/components/prompt-input"
 import { PromptManager } from "@/components/prompt-manager"
-import { GenerationSettings } from "@/components/generation-settings"
 import { GeneratedImages } from "@/components/generated-images"
 import { CostTracker } from "@/components/cost-tracker"
 import { StylePresets } from "@/components/style-presets"
 import { Button } from "@/components/ui/button"
-import { Settings, Palette, BookOpen, Upload, DollarSign, ChevronDown, ChevronUp } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
+import { Palette, BookOpen, Upload, DollarSign, Hash, Shield, Send as Sync, ImageIcon, Maximize } from "lucide-react"
 import type { StylePreset } from "@/lib/style-presets"
 import { compressImage, formatFileSize } from "@/lib/image-compression"
 import { AuthGuard } from "@/components/auth-guard"
@@ -273,56 +275,105 @@ export default function Home() {
                 onPromptChange={setPrompt}
               />
 
-              <div className="border-t border-border p-3 bg-muted/30">
-                <div className="flex flex-wrap gap-2">
+              <div className="border-t border-border p-3 bg-muted/10">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 text-xs">
+                  {/* Aspect Ratio */}
+                  <div className="flex items-center gap-2">
+                    <Maximize className="w-3 h-3" />
+                    <Select value={aspectRatio} onValueChange={setAspectRatio}>
+                      <SelectTrigger className="h-7 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="square_hd">1:1</SelectItem>
+                        <SelectItem value="portrait_4_3">4:3</SelectItem>
+                        <SelectItem value="portrait_16_9">16:9</SelectItem>
+                        <SelectItem value="landscape_4_3">3:4</SelectItem>
+                        <SelectItem value="landscape_16_9">9:16</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Number of Images */}
+                  <div className="flex items-center gap-2">
+                    <ImageIcon className="w-3 h-3" />
+                    <Select value={numImages.toString()} onValueChange={(v) => setNumImages(Number.parseInt(v))}>
+                      <SelectTrigger className="h-7 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1</SelectItem>
+                        <SelectItem value="2">2</SelectItem>
+                        <SelectItem value="3">3</SelectItem>
+                        <SelectItem value="4">4</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Seed */}
+                  <div className="flex items-center gap-2">
+                    <Hash className="w-3 h-3" />
+                    <Input
+                      type="number"
+                      placeholder="seed"
+                      value={seed || ""}
+                      onChange={(e) => setSeed(e.target.value ? Number.parseInt(e.target.value) : undefined)}
+                      className="h-7 text-xs"
+                    />
+                  </div>
+
+                  {/* Safety Checker */}
+                  <div className="flex items-center gap-2">
+                    <Shield className="w-3 h-3" />
+                    <Switch
+                      checked={enableSafetyChecker}
+                      onCheckedChange={setEnableSafetyChecker}
+                      className="scale-75"
+                    />
+                  </div>
+
+                  {/* Sync Mode */}
+                  <div className="flex items-center gap-2">
+                    <Sync className="w-3 h-3" />
+                    <Switch checked={syncMode} onCheckedChange={setSyncMode} className="scale-75" />
+                  </div>
+
+                  {/* Upload Button */}
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowUpload(!showUpload)}
-                    className="h-8 px-3 text-xs"
+                    className="h-7 px-2 text-xs justify-start"
                   >
                     <Upload className="w-3 h-3 mr-1" />
                     upload
-                    {showUpload ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
                   </Button>
+                </div>
 
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowSettings(!showSettings)}
-                    className="h-8 px-3 text-xs"
-                  >
-                    <Settings className="w-3 h-3 mr-1" />
-                    settings
-                    {showSettings ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
-                  </Button>
-
+                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/50">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowPresets(!showPresets)}
-                    className="h-8 px-3 text-xs"
+                    className="h-6 px-2 text-xs"
                   >
                     <Palette className="w-3 h-3 mr-1" />
                     presets
-                    {showPresets ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
                   </Button>
 
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowPrompts(!showPrompts)}
-                    className="h-8 px-3 text-xs"
+                    className="h-6 px-2 text-xs"
                   >
                     <BookOpen className="w-3 h-3 mr-1" />
                     saved
-                    {showPrompts ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
                   </Button>
 
-                  <Button variant="ghost" size="sm" onClick={() => setShowCost(!showCost)} className="h-8 px-3 text-xs">
+                  <Button variant="ghost" size="sm" onClick={() => setShowCost(!showCost)} className="h-6 px-2 text-xs">
                     <DollarSign className="w-3 h-3 mr-1" />
                     cost
-                    {showCost ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
                   </Button>
                 </div>
               </div>
@@ -336,30 +387,6 @@ export default function Home() {
                     {uploadedImages.length} image{uploadedImages.length !== 1 ? "s" : ""} ready
                   </div>
                 )}
-              </div>
-            )}
-
-            {showSettings && (
-              <div className="border border-border rounded-md p-4 bg-muted/10">
-                <GenerationSettings
-                  aspectRatio={aspectRatio}
-                  numImages={numImages}
-                  model={model}
-                  seed={seed}
-                  maxImages={maxImages}
-                  syncMode={syncMode}
-                  enableSafetyChecker={enableSafetyChecker}
-                  customWidth={customWidth}
-                  customHeight={customHeight}
-                  onAspectRatioChange={setAspectRatio}
-                  onNumImagesChange={setNumImages}
-                  onModelChange={setModel}
-                  onSeedChange={setSeed}
-                  onMaxImagesChange={setMaxImages}
-                  onSyncModeChange={setSyncMode}
-                  onSafetyCheckerChange={setEnableSafetyChecker}
-                  onCustomSizeChange={handleCustomSizeChange}
-                />
               </div>
             )}
 
