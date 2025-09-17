@@ -267,7 +267,7 @@ export default function Home() {
 
       if (data.images && data.images.length > 0) {
         HistoryStorage.addHistoryItem({
-          prompt: processedPrompt,
+          prompt: promptText, // Use original prompt instead of processedPrompt
           images: data.images.map((img: any) => ({
             url: img.url,
             width: img.width,
