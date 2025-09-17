@@ -10,7 +10,10 @@ import { CostTracker } from "@/components/cost-tracker"
 import { StylePresets } from "@/components/style-presets"
 import { TopNavbar } from "@/components/top-navbar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { ChevronDown, Settings, Palette, BookOpen, Sparkles } from "lucide-react"
 import type { StylePreset } from "@/lib/style-presets"
 import { compressImage, formatFileSize } from "@/lib/image-compression"
 import { AuthGuard } from "@/components/auth-guard"
@@ -44,6 +47,10 @@ export default function Home() {
   const [enableSafetyChecker, setEnableSafetyChecker] = useState(true)
   const [customWidth, setCustomWidth] = useState<number | undefined>(undefined)
   const [customHeight, setCustomHeight] = useState<number | undefined>(undefined)
+
+  const [showAdvanced, setShowAdvanced] = useState(false)
+  const [showPresets, setShowPresets] = useState(false)
+  const [showPrompts, setShowPrompts] = useState(false)
 
   const uploadImagesToFAL = async (images: UploadedImage[]): Promise<string[]> => {
     const uploadPromises = images.map(async (image) => {
@@ -256,86 +263,173 @@ export default function Home() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-card/30">
         <TopNavbar />
 
-        <div className="container mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-            <div className="xl:col-span-1">
-              <Card className="sticky top-4">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg text-card-foreground">Quick Settings</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <ImageUpload onImagesChange={setUploadedImages} maxImages={5} />
+        <div className="container mx-auto px-4 py-8 max-w-7xl">
+          {/* Hero Section */}
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-4">
+              <Sparkles className="w-4 h-4" />
+              AI-Powered Image Generation
+            </div>
+            <h1 className="text-4xl md:text-6xl font-bold text-balance mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              Transform Your Images with AI
+            </h1>
+            <p className="text-xl text-muted-foreground text-balance max-w-2xl mx-auto">
+              Upload your images and let AI transform them into stunning creations with advanced editing capabilities.
+            </p>
+          </div>
 
+          {/* Main Content */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Sidebar - Upload & Quick Actions */}
+            <div className="lg:col-span-1 space-y-6">
+              <Card className="border-2 border-dashed border-primary/20 hover:border-primary/40 transition-colors">
+                <CardHeader className="text-center pb-4">
+                  <CardTitle className="flex items-center justify-center gap-2 text-primary">
+                    <Sparkles className="w-5 h-5" />
+                    Upload Images
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ImageUpload onImagesChange={setUploadedImages} maxImages={5} />
+                  {uploadedImages.length > 0 && (
+                    <Badge variant="secondary" className="mt-3 w-full justify-center">
+                      {uploadedImages.length} image{uploadedImages.length !== 1 ? "s" : ""} ready
+                    </Badge>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg">Cost Tracker</CardTitle>
+                </CardHeader>
+                <CardContent>
                   <CostTracker onNewGeneration={() => {}} />
                 </CardContent>
               </Card>
             </div>
 
-            <div className="xl:col-span-3 space-y-6">
-              <PromptInput
-                onGenerate={handleGenerate}
-                isGenerating={isGenerating}
-                uploadedImagesCount={uploadedImages.length}
-                prompt={prompt}
-                onPromptChange={setPrompt}
-              />
-
-              <Card>
-                <Tabs defaultValue="presets" className="w-full">
-                  <CardHeader className="pb-3">
-                    <TabsList className="grid w-full grid-cols-3">
-                      <TabsTrigger value="presets">Presets</TabsTrigger>
-                      <TabsTrigger value="prompts">Saved Prompts</TabsTrigger>
-                      <TabsTrigger value="advanced">Advanced</TabsTrigger>
-                    </TabsList>
-                  </CardHeader>
-                  <CardContent>
-                    <TabsContent value="presets" className="mt-0">
-                      <StylePresets
-                        onApplyPreset={handleApplyPreset}
-                        currentSettings={{
-                          model,
-                          aspectRatio,
-                          seed,
-                          enableSafetyChecker,
-                          syncMode,
-                          customWidth,
-                          customHeight,
-                          prompt,
-                        }}
-                      />
-                    </TabsContent>
-                    <TabsContent value="prompts" className="mt-0">
-                      <PromptManager onUsePrompt={setPrompt} currentPrompt={prompt} />
-                    </TabsContent>
-                    <TabsContent value="advanced" className="mt-0">
-                      <GenerationSettings
-                        aspectRatio={aspectRatio}
-                        numImages={numImages}
-                        model={model}
-                        seed={seed}
-                        maxImages={maxImages}
-                        syncMode={syncMode}
-                        enableSafetyChecker={enableSafetyChecker}
-                        customWidth={customWidth}
-                        customHeight={customHeight}
-                        onAspectRatioChange={setAspectRatio}
-                        onNumImagesChange={setNumImages}
-                        onModelChange={setModel}
-                        onSeedChange={setSeed}
-                        onMaxImagesChange={setMaxImages}
-                        onSyncModeChange={setSyncMode}
-                        onSafetyCheckerChange={setEnableSafetyChecker}
-                        onCustomSizeChange={handleCustomSizeChange}
-                      />
-                    </TabsContent>
-                  </CardContent>
-                </Tabs>
+            {/* Main Content Area */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Prompt Input - Now more prominent */}
+              <Card className="border-primary/20">
+                <CardContent className="p-6">
+                  <PromptInput
+                    onGenerate={handleGenerate}
+                    isGenerating={isGenerating}
+                    uploadedImagesCount={uploadedImages.length}
+                    prompt={prompt}
+                    onPromptChange={setPrompt}
+                  />
+                </CardContent>
               </Card>
 
+              {/* Collapsible Options - Clean integration */}
+              <div className="space-y-4">
+                {/* Style Presets */}
+                <Collapsible open={showPresets} onOpenChange={setShowPresets}>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between h-12 text-left bg-transparent">
+                      <div className="flex items-center gap-2">
+                        <Palette className="w-4 h-4" />
+                        <span className="font-medium">Style Presets</span>
+                        <Badge variant="secondary" className="ml-2">
+                          Quick Apply
+                        </Badge>
+                      </div>
+                      <ChevronDown className={`w-4 h-4 transition-transform ${showPresets ? "rotate-180" : ""}`} />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <Card className="mt-2 border-l-4 border-l-secondary">
+                      <CardContent className="p-4">
+                        <StylePresets
+                          onApplyPreset={handleApplyPreset}
+                          currentSettings={{
+                            model,
+                            aspectRatio,
+                            seed,
+                            enableSafetyChecker,
+                            syncMode,
+                            customWidth,
+                            customHeight,
+                            prompt,
+                          }}
+                        />
+                      </CardContent>
+                    </Card>
+                  </CollapsibleContent>
+                </Collapsible>
+
+                {/* Saved Prompts */}
+                <Collapsible open={showPrompts} onOpenChange={setShowPrompts}>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between h-12 text-left bg-transparent">
+                      <div className="flex items-center gap-2">
+                        <BookOpen className="w-4 h-4" />
+                        <span className="font-medium">Saved Prompts</span>
+                        <Badge variant="secondary" className="ml-2">
+                          Library
+                        </Badge>
+                      </div>
+                      <ChevronDown className={`w-4 h-4 transition-transform ${showPrompts ? "rotate-180" : ""}`} />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <Card className="mt-2 border-l-4 border-l-accent">
+                      <CardContent className="p-4">
+                        <PromptManager onUsePrompt={setPrompt} currentPrompt={prompt} />
+                      </CardContent>
+                    </Card>
+                  </CollapsibleContent>
+                </Collapsible>
+
+                {/* Advanced Settings */}
+                <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between h-12 text-left bg-transparent">
+                      <div className="flex items-center gap-2">
+                        <Settings className="w-4 h-4" />
+                        <span className="font-medium">Advanced Settings</span>
+                        <Badge variant="secondary" className="ml-2">
+                          Fine-tune
+                        </Badge>
+                      </div>
+                      <ChevronDown className={`w-4 h-4 transition-transform ${showAdvanced ? "rotate-180" : ""}`} />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <Card className="mt-2 border-l-4 border-l-primary">
+                      <CardContent className="p-4">
+                        <GenerationSettings
+                          aspectRatio={aspectRatio}
+                          numImages={numImages}
+                          model={model}
+                          seed={seed}
+                          maxImages={maxImages}
+                          syncMode={syncMode}
+                          enableSafetyChecker={enableSafetyChecker}
+                          customWidth={customWidth}
+                          customHeight={customHeight}
+                          onAspectRatioChange={setAspectRatio}
+                          onNumImagesChange={setNumImages}
+                          onModelChange={setModel}
+                          onSeedChange={setSeed}
+                          onMaxImagesChange={setMaxImages}
+                          onSyncModeChange={setSyncMode}
+                          onSafetyCheckerChange={setEnableSafetyChecker}
+                          onCustomSizeChange={handleCustomSizeChange}
+                        />
+                      </CardContent>
+                    </Card>
+                  </CollapsibleContent>
+                </Collapsible>
+              </div>
+
+              {/* Generated Images */}
               <GeneratedImages images={generatedImages} isLoading={isGenerating} />
             </div>
           </div>

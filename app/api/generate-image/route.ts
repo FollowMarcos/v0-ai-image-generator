@@ -136,21 +136,61 @@ export async function POST(request: NextRequest) {
     console.log("[v0] Aspect ratio requested:", aspectRatio)
     console.log("[v0] Image size being sent:", input.image_size)
 
-    const result = await Promise.race([
-      fal.subscribe(modelEndpoint, {
-        input,
-        logs: true,
-        onQueueUpdate: (update) => {
-          if (update.status === "IN_PROGRESS") {
-            console.log(
-              "[v0] Generation in progress:",
-              update.logs?.map((log) => log.message),
-            )
-          }
-        },
-      }),
-      new Promise((_, reject) => setTimeout(() => reject(new Error("Request timeout after 5 minutes")), 300000)),
-    ])
+    let result
+    try {
+      result = await Promise.race([
+        fal.subscribe(modelEndpoint, {
+          input,
+          logs: true,
+          onQueueUpdate: (update) => {
+            if (update.status === "IN_PROGRESS") {
+              console.log(
+                "[v0] Generation in progress:",
+                update.logs?.map((log) => log.message),
+              )
+            }
+          },
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Request timeout after 5 minutes")), 300000)),
+      ])
+    } catch (falError) {
+      console.error("[v0] FAL API error:", falError)
+
+      // Handle specific FAL API errors
+      if (falError instanceof Error) {
+        const errorStr = falError.message.toLowerCase()
+
+        if (errorStr.includes("content policy") || errorStr.includes("safety") || errorStr.includes("inappropriate")) {
+          return NextResponse.json(
+            {
+              error: "Content blocked by safety checker. Please try a different prompt or disable the safety checker.",
+            },
+            { status: 400 },
+          )
+        }
+
+        if (errorStr.includes("quota") || errorStr.includes("limit")) {
+          return NextResponse.json(
+            {
+              error: "API quota exceeded. Please check your FAL account limits.",
+            },
+            { status: 429 },
+          )
+        }
+
+        if (errorStr.includes("timeout")) {
+          return NextResponse.json(
+            {
+              error: "Request timed out. Please try again with fewer images or a simpler prompt.",
+            },
+            { status: 408 },
+          )
+        }
+      }
+
+      // Re-throw to be caught by outer try-catch
+      throw falError
+    }
 
     console.log("[v0] FAL API result:", result)
 
