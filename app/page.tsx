@@ -265,65 +265,126 @@ export default function Home() {
         <div className="container mx-auto px-4 py-8 max-w-4xl">
           <div className="space-y-4">
             <div className="border border-border rounded-md">
-              <PromptInput
-                onGenerate={handleGenerate}
-                isGenerating={isGenerating}
-                uploadedImagesCount={uploadedImages.length}
-                prompt={prompt}
-                onPromptChange={setPrompt}
-              />
+              <div className="relative">
+                <PromptInput
+                  onGenerate={handleGenerate}
+                  isGenerating={isGenerating}
+                  uploadedImagesCount={uploadedImages.length}
+                  prompt={prompt}
+                  onPromptChange={setPrompt}
+                />
 
-              <div className="border-t border-border p-3 bg-muted/30">
-                <div className="flex flex-wrap gap-2">
+                <div className="absolute left-3 bottom-3">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowUpload(!showUpload)}
-                    className="h-8 px-3 text-xs"
+                    className="h-8 w-8 p-0 hover:bg-muted/50"
                   >
-                    <Upload className="w-3 h-3 mr-1" />
-                    upload
-                    {showUpload ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
+                    <Upload className="w-4 h-4" />
                   </Button>
+                </div>
+              </div>
 
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowSettings(!showSettings)}
-                    className="h-8 px-3 text-xs"
-                  >
-                    <Settings className="w-3 h-3 mr-1" />
-                    settings
-                    {showSettings ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
-                  </Button>
+              <div className="border-t border-border p-3 bg-muted/30">
+                <div className="flex flex-wrap items-center gap-4">
+                  {/* Image Size Dropdown */}
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs text-muted-foreground">Size:</label>
+                    <select
+                      value={aspectRatio}
+                      onChange={(e) => setAspectRatio(e.target.value)}
+                      className="h-8 px-2 text-xs bg-background border border-border rounded"
+                    >
+                      <option value="square_hd">Square HD (1024×1024)</option>
+                      <option value="square">Square (512×512)</option>
+                      <option value="portrait_4_3">Portrait 4:3 (768×1024)</option>
+                      <option value="portrait_16_9">Portrait 16:9 (576×1024)</option>
+                      <option value="landscape_4_3">Landscape 4:3 (1024×768)</option>
+                      <option value="landscape_16_9">Landscape 16:9 (1024×576)</option>
+                    </select>
+                  </div>
 
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowPresets(!showPresets)}
-                    className="h-8 px-3 text-xs"
-                  >
-                    <Palette className="w-3 h-3 mr-1" />
-                    presets
-                    {showPresets ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
-                  </Button>
+                  {/* Safety Checker Switch */}
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs text-muted-foreground">Safe:</label>
+                    <button
+                      onClick={() => setEnableSafetyChecker(!enableSafetyChecker)}
+                      className={`w-8 h-4 rounded-full transition-colors ${
+                        enableSafetyChecker ? "bg-primary" : "bg-muted-foreground/30"
+                      }`}
+                    >
+                      <div
+                        className={`w-3 h-3 bg-white rounded-full transition-transform ${
+                          enableSafetyChecker ? "translate-x-4" : "translate-x-0.5"
+                        }`}
+                      />
+                    </button>
+                  </div>
 
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowPrompts(!showPrompts)}
-                    className="h-8 px-3 text-xs"
-                  >
-                    <BookOpen className="w-3 h-3 mr-1" />
-                    saved
-                    {showPrompts ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
-                  </Button>
+                  {/* Sync Mode Switch */}
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs text-muted-foreground">Sync:</label>
+                    <button
+                      onClick={() => setSyncMode(!syncMode)}
+                      className={`w-8 h-4 rounded-full transition-colors ${
+                        syncMode ? "bg-primary" : "bg-muted-foreground/30"
+                      }`}
+                    >
+                      <div
+                        className={`w-3 h-3 bg-white rounded-full transition-transform ${
+                          syncMode ? "translate-x-4" : "translate-x-0.5"
+                        }`}
+                      />
+                    </button>
+                  </div>
 
-                  <Button variant="ghost" size="sm" onClick={() => setShowCost(!showCost)} className="h-8 px-3 text-xs">
-                    <DollarSign className="w-3 h-3 mr-1" />
-                    cost
-                    {showCost ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
-                  </Button>
+                  {/* Remaining buttons moved to right */}
+                  <div className="ml-auto flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowSettings(!showSettings)}
+                      className="h-8 px-3 text-xs"
+                    >
+                      <Settings className="w-3 h-3 mr-1" />
+                      settings
+                      {showSettings ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowPresets(!showPresets)}
+                      className="h-8 px-3 text-xs"
+                    >
+                      <Palette className="w-3 h-3 mr-1" />
+                      presets
+                      {showPresets ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowPrompts(!showPrompts)}
+                      className="h-8 px-3 text-xs"
+                    >
+                      <BookOpen className="w-3 h-3 mr-1" />
+                      saved
+                      {showPrompts ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowCost(!showCost)}
+                      className="h-8 px-3 text-xs"
+                    >
+                      <DollarSign className="w-3 h-3 mr-1" />
+                      cost
+                      {showCost ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
