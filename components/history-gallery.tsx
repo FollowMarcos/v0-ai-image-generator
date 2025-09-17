@@ -21,6 +21,7 @@ import {
   SortAsc,
   ChevronLeft,
   ChevronRight,
+  Check,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -47,6 +48,7 @@ export function HistoryGallery({ onRemix, onReusePrompt, onCopyPrompt }: History
   const [showBulkActions, setShowBulkActions] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(12)
+  const [copiedPrompts, setCopiedPrompts] = useState<Set<string>>(new Set())
 
   // Load history items
   useEffect(() => {
@@ -187,6 +189,25 @@ export function HistoryGallery({ onRemix, onReusePrompt, onCopyPrompt }: History
     }
   }
 
+  const handleCopyPromptClick = async (prompt: string, itemId: string) => {
+    try {
+      await navigator.clipboard.writeText(prompt)
+      setCopiedPrompts((prev) => new Set(prev).add(itemId))
+      onCopyPrompt?.(prompt)
+
+      // Clear the copied state after 2 seconds
+      setTimeout(() => {
+        setCopiedPrompts((prev) => {
+          const newSet = new Set(prev)
+          newSet.delete(itemId)
+          return newSet
+        })
+      }, 2000)
+    } catch (error) {
+      console.error("Failed to copy prompt:", error)
+    }
+  }
+
   if (historyItems.length === 0) {
     return (
       <div className="text-center py-12">
@@ -230,28 +251,40 @@ export function HistoryGallery({ onRemix, onReusePrompt, onCopyPrompt }: History
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuCheckboxItem checked={filterBySize === "all"} onCheckedChange={() => setFilterBySize("all")}>
+              <DropdownMenuCheckboxItem
+                checked={filterBySize === "all"}
+                onCheckedChange={(checked) => checked && setFilterBySize("all")}
+              >
                 All Sizes
               </DropdownMenuCheckboxItem>
               <DropdownMenuSeparator />
-              <DropdownMenuCheckboxItem checked={filterBySize === "1:1"} onCheckedChange={() => setFilterBySize("1:1")}>
+              <DropdownMenuCheckboxItem
+                checked={filterBySize === "1:1"}
+                onCheckedChange={(checked) => checked && setFilterBySize("1:1")}
+              >
                 Square (1:1)
               </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem checked={filterBySize === "4:3"} onCheckedChange={() => setFilterBySize("4:3")}>
+              <DropdownMenuCheckboxItem
+                checked={filterBySize === "4:3"}
+                onCheckedChange={(checked) => checked && setFilterBySize("4:3")}
+              >
                 Landscape (4:3)
               </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem checked={filterBySize === "3:4"} onCheckedChange={() => setFilterBySize("3:4")}>
+              <DropdownMenuCheckboxItem
+                checked={filterBySize === "3:4"}
+                onCheckedChange={(checked) => checked && setFilterBySize("3:4")}
+              >
                 Portrait (3:4)
               </DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem
                 checked={filterBySize === "16:9"}
-                onCheckedChange={() => setFilterBySize("16:9")}
+                onCheckedChange={(checked) => checked && setFilterBySize("16:9")}
               >
                 Widescreen (16:9)
               </DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem
                 checked={filterBySize === "custom"}
-                onCheckedChange={() => setFilterBySize("custom")}
+                onCheckedChange={(checked) => checked && setFilterBySize("custom")}
               >
                 Custom Size
               </DropdownMenuCheckboxItem>
@@ -438,25 +471,37 @@ export function HistoryGallery({ onRemix, onReusePrompt, onCopyPrompt }: History
 
                 {/* Actions */}
                 <div className="flex items-center gap-2 pt-2 border-t border-border">
-                  <Button size="sm" variant="outline" onClick={() => onRemix?.(item)} className="flex-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      console.log("[v0] Remix button clicked for item:", item.id)
+                      onRemix?.(item)
+                    }}
+                    className="flex-1"
+                  >
                     <RotateCcw className="w-4 h-4 mr-2" />
                     Remix
-                  </Button>
-
-                  <Button size="sm" variant="outline" onClick={() => onReusePrompt?.(item.prompt)}>
-                    <ImageIcon className="w-4 h-4 mr-2" />
-                    Reuse
                   </Button>
 
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => {
-                      navigator.clipboard.writeText(item.prompt)
-                      onCopyPrompt?.(item.prompt)
+                      console.log("[v0] Reuse prompt button clicked:", item.prompt)
+                      onReusePrompt?.(item.prompt)
                     }}
                   >
-                    <Copy className="w-4 h-4" />
+                    <ImageIcon className="w-4 h-4 mr-2" />
+                    Reuse
+                  </Button>
+
+                  <Button size="sm" variant="outline" onClick={() => handleCopyPromptClick(item.prompt, item.id)}>
+                    {copiedPrompts.has(item.id) ? (
+                      <Check className="w-4 h-4 text-green-500" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
                   </Button>
                 </div>
               </div>
