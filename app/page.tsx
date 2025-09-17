@@ -9,6 +9,7 @@ import { GeneratedImages } from "@/components/generated-images"
 import { CostTracker } from "@/components/cost-tracker"
 import { StylePresets } from "@/components/style-presets"
 import { Button } from "@/components/ui/button"
+import { HistoryGallery } from "@/components/history-gallery"
 import {
   Settings,
   Palette,
@@ -310,6 +311,37 @@ export default function Home() {
     setCustomHeight(height)
   }
 
+  const handleRemix = (historyItem: any) => {
+    // Set the prompt
+    setPrompt(historyItem.prompt)
+
+    // Apply the settings
+    setAspectRatio(historyItem.settings.aspectRatio)
+    setNumImages(historyItem.settings.imageCount)
+    setModel(historyItem.settings.model)
+    setSeed(historyItem.settings.seed)
+    setEnableSafetyChecker(historyItem.settings.enableSafetyChecker)
+    setSyncMode(historyItem.settings.syncMode)
+    setCustomWidth(historyItem.settings.customWidth)
+    setCustomHeight(historyItem.settings.customHeight)
+
+    // If there were uploaded images, we'd need to recreate them
+    // For now, we'll just clear the uploaded images since we can't recreate them from URLs
+    setUploadedImages([])
+
+    console.log("[v0] Remixed generation with settings:", historyItem.settings)
+  }
+
+  const handleReusePrompt = (prompt: string) => {
+    setPrompt(prompt)
+    console.log("[v0] Reused prompt:", prompt)
+  }
+
+  const handleCopyPrompt = (prompt: string) => {
+    console.log("[v0] Copied prompt to clipboard:", prompt)
+    // Could add a toast notification here
+  }
+
   return (
     <AuthGuard>
       <div className="min-h-screen bg-background">
@@ -585,6 +617,8 @@ export default function Home() {
             )}
 
             <GeneratedImages images={generatedImages} isLoading={isGenerating} />
+
+            <HistoryGallery onRemix={handleRemix} onReusePrompt={handleReusePrompt} onCopyPrompt={handleCopyPrompt} />
           </div>
         </div>
       </div>
