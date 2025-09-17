@@ -33,7 +33,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
     e.preventDefault()
     setError("")
 
-    // Secure credentials
     const validUsername = process.env.NEXT_PUBLIC_AUTH_USERNAME || "admin"
     const validPassword = process.env.NEXT_PUBLIC_AUTH_PASSWORD || "changeme"
 

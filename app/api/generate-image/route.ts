@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
       prompt,
       image_size: getImageSize(aspectRatio || "1:1", customWidth, customHeight),
       num_images: numImages || 1,
-      max_images: maxImages || 1,
+      max_images: Math.max(numImages || 1, maxImages || 1),
       enable_safety_checker: enableSafetyChecker !== false, // Default to true
       sync_mode: syncMode || false,
       image_urls: imageUrls,
