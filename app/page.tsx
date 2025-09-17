@@ -376,23 +376,7 @@ export default function Home() {
                   )}
 
                   <div className="relative">
-                    <textarea
-                      ref={textareaRef}
-                      value={prompt}
-                      onChange={(e) => setPrompt(e.target.value)}
-                      placeholder="Describe your image transformation... or drag & drop images here"
-                      className="w-full min-h-[120px] p-4 bg-transparent border-0 resize-none focus:outline-none text-lg placeholder:text-muted-foreground"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                          e.preventDefault()
-                          if (prompt.trim() && !isGenerating) {
-                            handleGenerate(prompt)
-                          }
-                        }
-                      }}
-                    />
-
-                    <div className="absolute bottom-4 right-4 flex items-center gap-2">
+                    <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
                       <input
                         type="file"
                         multiple
@@ -425,6 +409,22 @@ export default function Home() {
                         {isGenerating ? "Generating..." : "Generate"}
                       </Button>
                     </div>
+
+                    <textarea
+                      ref={textareaRef}
+                      value={prompt}
+                      onChange={(e) => setPrompt(e.target.value)}
+                      placeholder="Describe your image transformation... or drag & drop images here"
+                      className="w-full min-h-[120px] p-4 pr-32 bg-transparent border-0 resize-none focus:outline-none text-lg placeholder:text-muted-foreground"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                          e.preventDefault()
+                          if (prompt.trim() && !isGenerating) {
+                            handleGenerate(prompt)
+                          }
+                        }
+                      }}
+                    />
                   </div>
                 </div>
               </div>
