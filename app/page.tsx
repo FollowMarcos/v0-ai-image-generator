@@ -39,11 +39,23 @@ interface GeneratedImage {
   height?: number
 }
 
+const aspectRatios = [
+  { value: "1:1", label: "Square (1:1) - 2048×2048" },
+  { value: "4:3", label: "Landscape (4:3) - 2304×1728" },
+  { value: "3:4", label: "Portrait (3:4) - 1728×2304" },
+  { value: "16:9", label: "Widescreen (16:9) - 2560×1440" },
+  { value: "9:16", label: "Vertical (9:16) - 1440×2560" },
+  { value: "3:2", label: "Photo (3:2) - 2496×1664" },
+  { value: "2:3", label: "Portrait Photo (2:3) - 1664×2496" },
+  { value: "21:9", label: "Ultrawide (21:9) - 3024×1296" },
+  { value: "custom", label: "Custom Size" },
+]
+
 export default function Home() {
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([])
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
-  const [aspectRatio, setAspectRatio] = useState("square_hd")
+  const [aspectRatio, setAspectRatio] = useState("1:1")
   const [numImages, setNumImages] = useState(1)
   const [model, setModel] = useState("edit")
   const [prompt, setPrompt] = useState("")
@@ -393,16 +405,39 @@ export default function Home() {
                       <select
                         value={aspectRatio}
                         onChange={(e) => setAspectRatio(e.target.value)}
-                        className="px-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        className="px-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring font-mono"
                       >
-                        <option value="square_hd">Square HD (1024×1024)</option>
-                        <option value="square">Square (512×512)</option>
-                        <option value="portrait_4_3">Portrait 4:3 (768×1024)</option>
-                        <option value="portrait_16_9">Portrait 16:9 (576×1024)</option>
-                        <option value="landscape_4_3">Landscape 4:3 (1024×768)</option>
-                        <option value="landscape_16_9">Landscape 16:9 (1024×576)</option>
+                        {aspectRatios.map((ratio) => (
+                          <option key={ratio.value} value={ratio.value}>
+                            {ratio.label}
+                          </option>
+                        ))}
                       </select>
                     </div>
+
+                    {aspectRatio === "custom" && (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min={1024}
+                          max={4096}
+                          value={customWidth || 1024}
+                          onChange={(e) => setCustomWidth(Number.parseInt(e.target.value))}
+                          placeholder="Width"
+                          className="w-20 px-2 py-1 bg-background border border-border rounded text-sm font-mono"
+                        />
+                        <span className="text-muted-foreground">×</span>
+                        <input
+                          type="number"
+                          min={1024}
+                          max={4096}
+                          value={customHeight || 1024}
+                          onChange={(e) => setCustomHeight(Number.parseInt(e.target.value))}
+                          placeholder="Height"
+                          className="w-20 px-2 py-1 bg-background border border-border rounded text-sm font-mono"
+                        />
+                      </div>
+                    )}
 
                     <div className="flex items-center gap-3">
                       <label className="text-sm font-medium text-foreground">Count</label>

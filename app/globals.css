@@ -4,78 +4,79 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Updated color tokens to match Midjourney-inspired design brief */
-  --background: #ffffff;
-  --foreground: #1f2937;
-  --card: #f8fafc;
-  --card-foreground: #1f2937;
-  --popover: #ffffff;
-  --popover-foreground: #1f2937;
-  --primary: #374151;
+  /* Updated to purple theme with #100214 background and #710b8a accents */
+  --background: #100214;
+  --foreground: #ffffff;
+  --card: #1a0a2e;
+  --card-foreground: #ffffff;
+  --popover: #1a0a2e;
+  --popover-foreground: #ffffff;
+  --primary: #710b8a;
   --primary-foreground: #ffffff;
-  --secondary: #6366f1;
+  --secondary: #710b8a;
   --secondary-foreground: #ffffff;
-  --muted: #f8fafc;
-  --muted-foreground: #6b7280;
-  --accent: #6366f1;
+  --muted: #2a1b3d;
+  --muted-foreground: #a0a0a0;
+  --accent: #710b8a;
   --accent-foreground: #ffffff;
   --destructive: #be123c;
   --destructive-foreground: #ffffff;
-  --border: #e5e7eb;
-  --input: #f8fafc;
-  --ring: rgba(99, 102, 241, 0.5);
-  --chart-1: #6366f1;
+  --border: #3d2c5d;
+  --input: #1a0a2e;
+  --ring: rgba(113, 11, 138, 0.5);
+  --chart-1: #710b8a;
   --chart-2: #be123c;
-  --chart-3: #1f2937;
-  --chart-4: #374151;
-  --chart-5: #f8fafc;
+  --chart-3: #ffffff;
+  --chart-4: #a0a0a0;
+  --chart-5: #2a1b3d;
   --radius: 0.5rem;
-  --sidebar: #f8fafc;
-  --sidebar-foreground: #1f2937;
-  --sidebar-primary: #374151;
+  --sidebar: #1a0a2e;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #710b8a;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #6366f1;
+  --sidebar-accent: #710b8a;
   --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #e5e7eb;
-  --sidebar-ring: rgba(99, 102, 241, 0.5);
+  --sidebar-border: #3d2c5d;
+  --sidebar-ring: rgba(113, 11, 138, 0.5);
 }
 
 .dark {
-  --background: #0f172a;
-  --foreground: #f1f5f9;
-  --card: #1e293b;
-  --card-foreground: #f1f5f9;
-  --popover: #1e293b;
-  --popover-foreground: #f1f5f9;
-  --primary: #f1f5f9;
-  --primary-foreground: #0f172a;
-  --secondary: #6366f1;
+  --background: #100214;
+  --foreground: #ffffff;
+  --card: #1a0a2e;
+  --card-foreground: #ffffff;
+  --popover: #1a0a2e;
+  --popover-foreground: #ffffff;
+  --primary: #710b8a;
+  --primary-foreground: #ffffff;
+  --secondary: #710b8a;
   --secondary-foreground: #ffffff;
-  --muted: #334155;
-  --muted-foreground: #94a3b8;
-  --accent: #6366f1;
+  --muted: #2a1b3d;
+  --muted-foreground: #a0a0a0;
+  --accent: #710b8a;
   --accent-foreground: #ffffff;
   --destructive: #be123c;
   --destructive-foreground: #ffffff;
-  --border: #334155;
-  --input: #1e293b;
-  --ring: rgba(99, 102, 241, 0.5);
-  --chart-1: #6366f1;
+  --border: #3d2c5d;
+  --input: #1a0a2e;
+  --ring: rgba(113, 11, 138, 0.5);
+  --chart-1: #710b8a;
   --chart-2: #be123c;
-  --chart-3: #f1f5f9;
-  --chart-4: #94a3b8;
-  --chart-5: #334155;
-  --sidebar: #1e293b;
-  --sidebar-foreground: #f1f5f9;
-  --sidebar-primary: #6366f1;
+  --chart-3: #ffffff;
+  --chart-4: #a0a0a0;
+  --chart-5: #2a1b3d;
+  --sidebar: #1a0a2e;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #710b8a;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #334155;
-  --sidebar-accent-foreground: #f1f5f9;
-  --sidebar-border: #334155;
-  --sidebar-ring: rgba(99, 102, 241, 0.5);
+  --sidebar-accent: #2a1b3d;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #3d2c5d;
+  --sidebar-ring: rgba(113, 11, 138, 0.5);
 }
 
 @theme inline {
+  --font-mono: var(--font-jetbrains-mono);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -119,14 +120,14 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-mono;
   }
 }
 
-/* Added custom styles for Midjourney-inspired interface */
+/* Updated custom styles for purple theme */
 .prompt-container {
-  background: linear-gradient(135deg, var(--input) 0%, rgba(248, 250, 252, 0.8) 100%);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  background: linear-gradient(135deg, var(--input) 0%, rgba(26, 10, 46, 0.8) 100%);
+  box-shadow: 0 4px 6px -1px rgba(113, 11, 138, 0.2), 0 2px 4px -1px rgba(113, 11, 138, 0.1);
 }
 
 .image-upload-zone {
@@ -136,10 +137,10 @@
 
 .image-upload-zone:hover {
   border-color: var(--accent);
-  background-color: rgba(99, 102, 241, 0.05);
+  background-color: rgba(113, 11, 138, 0.05);
 }
 
 .image-upload-zone.drag-over {
   border-color: var(--accent);
-  background-color: rgba(99, 102, 241, 0.1);
+  background-color: rgba(113, 11, 138, 0.1);
 }
