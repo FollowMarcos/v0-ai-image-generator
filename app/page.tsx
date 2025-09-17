@@ -4,14 +4,12 @@ import { useState } from "react"
 import { ImageUpload } from "@/components/image-upload"
 import { PromptInput } from "@/components/prompt-input"
 import { PromptManager } from "@/components/prompt-manager"
+import { GenerationSettings } from "@/components/generation-settings"
 import { GeneratedImages } from "@/components/generated-images"
 import { CostTracker } from "@/components/cost-tracker"
 import { StylePresets } from "@/components/style-presets"
 import { Button } from "@/components/ui/button"
-import { Switch } from "@/components/ui/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
-import { Palette, BookOpen, Upload, DollarSign, Hash, Shield, Send as Sync, ImageIcon, Maximize } from "lucide-react"
+import { Settings, Palette, BookOpen, Upload, DollarSign, ChevronDown, ChevronUp } from "lucide-react"
 import type { StylePreset } from "@/lib/style-presets"
 import { compressImage, formatFileSize } from "@/lib/image-compression"
 import { AuthGuard } from "@/components/auth-guard"
@@ -34,8 +32,7 @@ export default function Home() {
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([])
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
-  const [width, setWidth] = useState(1024)
-  const [height, setHeight] = useState(1024)
+  const [aspectRatio, setAspectRatio] = useState("square_hd")
   const [numImages, setNumImages] = useState(1)
   const [model, setModel] = useState("edit")
   const [prompt, setPrompt] = useState("")
@@ -86,24 +83,27 @@ export default function Home() {
 
   const handleApplyPreset = (preset: StylePreset) => {
     console.log("[v0] Applying preset:", preset)
-    console.log("[v0] Current settings before:", { model, width, height, seed, enableSafetyChecker, syncMode, prompt })
+    console.log("[v0] Current settings before:", { model, aspectRatio, seed, enableSafetyChecker, syncMode, prompt })
 
+    // Only append style information if the prompt is empty or doesn't already contain style keywords
     if (prompt.trim() === "") {
       setPrompt(preset.promptTemplate)
     } else {
+      // Check if the prompt already contains style-related keywords to avoid duplication
       const styleKeywords = ["style", "art", "painting", "digital", "realistic", "cartoon", "anime"]
       const hasStyleKeywords = styleKeywords.some(
         (keyword) => prompt.toLowerCase().includes(keyword) || preset.promptTemplate.toLowerCase().includes(keyword),
       )
 
       if (!hasStyleKeywords) {
+        // Append the style template to the existing prompt
         setPrompt(`${prompt}, ${preset.promptTemplate}`)
       }
+      // If style keywords already exist, don't modify the prompt to avoid redundancy
     }
 
     setModel(preset.settings.model)
-    if (preset.settings.customWidth) setWidth(preset.settings.customWidth)
-    if (preset.settings.customHeight) setHeight(preset.settings.customHeight)
+    setAspectRatio(preset.settings.aspectRatio)
     setSeed(preset.settings.seed)
     setEnableSafetyChecker(preset.settings.enableSafetyChecker)
     setSyncMode(preset.settings.syncMode)
@@ -111,10 +111,9 @@ export default function Home() {
     setCustomHeight(preset.settings.customHeight)
 
     console.log("[v0] Settings after applying preset:", {
-      prompt: prompt,
+      prompt: prompt, // Log the preserved/enhanced prompt
       model: preset.settings.model,
-      width,
-      height,
+      aspectRatio: preset.settings.aspectRatio,
       seed: preset.settings.seed,
       enableSafetyChecker: preset.settings.enableSafetyChecker,
       syncMode: preset.settings.syncMode,
@@ -123,8 +122,7 @@ export default function Home() {
 
   const handleGenerate = async (promptText: string) => {
     const currentSettings = {
-      width,
-      height,
+      aspectRatio,
       numImages,
       model,
       seed,
@@ -147,7 +145,7 @@ export default function Home() {
         uploadedImages: uploadedImages.length,
       })
 
-      console.log("[v0] CLIENT: Image dimensions:", { width, height })
+      console.log("[v0] CLIENT: Aspect ratio selected:", aspectRatio)
       console.log("[v0] CLIENT: Custom dimensions:", { customWidth, customHeight })
 
       if (uploadedImages.length === 0) {
@@ -174,10 +172,9 @@ export default function Home() {
       const payload = {
         prompt: processedPrompt,
         imageUrls,
-        width,
-        height,
+        aspectRatio,
         numImages,
-        model: "edit",
+        model: "edit", // Force model to be "edit" since we only do image-to-image
         seed,
         maxImages: effectiveMaxImages,
         syncMode,
@@ -223,8 +220,7 @@ export default function Home() {
           })),
           settings: {
             model: "edit",
-            width,
-            height,
+            aspectRatio,
             imageCount: numImages,
             seed,
             enableSafetyChecker,
@@ -244,8 +240,7 @@ export default function Home() {
       console.error("Error generating images:", error)
 
       console.log("[v0] Restoring settings after error:", currentSettings)
-      setWidth(currentSettings.width)
-      setHeight(currentSettings.height)
+      setAspectRatio(currentSettings.aspectRatio)
       setNumImages(currentSettings.numImages)
       setModel(currentSettings.model)
       setSeed(currentSettings.seed)
@@ -278,116 +273,56 @@ export default function Home() {
                 onPromptChange={setPrompt}
               />
 
-              <div className="border-t border-border p-3 bg-muted/10">
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 text-xs">
-                  <div className="flex items-center gap-2">
-                    <Maximize className="w-3 h-3" />
-                    <Input
-                      type="number"
-                      placeholder="width"
-                      value={width}
-                      onChange={(e) => setWidth(Number.parseInt(e.target.value) || 1024)}
-                      className="h-7 text-xs"
-                      min="256"
-                      max="2048"
-                      step="64"
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Maximize className="w-3 h-3" />
-                    <Input
-                      type="number"
-                      placeholder="height"
-                      value={height}
-                      onChange={(e) => setHeight(Number.parseInt(e.target.value) || 1024)}
-                      className="h-7 text-xs"
-                      min="256"
-                      max="2048"
-                      step="64"
-                    />
-                  </div>
-
-                  {/* Number of Images */}
-                  <div className="flex items-center gap-2">
-                    <ImageIcon className="w-3 h-3" />
-                    <Select value={numImages.toString()} onValueChange={(v) => setNumImages(Number.parseInt(v))}>
-                      <SelectTrigger className="h-7 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">1</SelectItem>
-                        <SelectItem value="2">2</SelectItem>
-                        <SelectItem value="3">3</SelectItem>
-                        <SelectItem value="4">4</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Seed */}
-                  <div className="flex items-center gap-2">
-                    <Hash className="w-3 h-3" />
-                    <Input
-                      type="number"
-                      placeholder="seed"
-                      value={seed || ""}
-                      onChange={(e) => setSeed(e.target.value ? Number.parseInt(e.target.value) : undefined)}
-                      className="h-7 text-xs"
-                    />
-                  </div>
-
-                  {/* Safety Checker */}
-                  <div className="flex items-center gap-2">
-                    <Shield className="w-3 h-3" />
-                    <Switch
-                      checked={enableSafetyChecker}
-                      onCheckedChange={setEnableSafetyChecker}
-                      className="scale-75"
-                    />
-                  </div>
-
-                  {/* Sync Mode */}
-                  <div className="flex items-center gap-2">
-                    <Sync className="w-3 h-3" />
-                    <Switch checked={syncMode} onCheckedChange={setSyncMode} className="scale-75" />
-                  </div>
-
-                  {/* Upload Button */}
+              <div className="border-t border-border p-3 bg-muted/30">
+                <div className="flex flex-wrap gap-2">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowUpload(!showUpload)}
-                    className="h-7 px-2 text-xs justify-start"
+                    className="h-8 px-3 text-xs"
                   >
                     <Upload className="w-3 h-3 mr-1" />
                     upload
+                    {showUpload ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
                   </Button>
-                </div>
 
-                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/50">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowSettings(!showSettings)}
+                    className="h-8 px-3 text-xs"
+                  >
+                    <Settings className="w-3 h-3 mr-1" />
+                    settings
+                    {showSettings ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
+                  </Button>
+
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowPresets(!showPresets)}
-                    className="h-6 px-2 text-xs"
+                    className="h-8 px-3 text-xs"
                   >
                     <Palette className="w-3 h-3 mr-1" />
                     presets
+                    {showPresets ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
                   </Button>
 
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowPrompts(!showPrompts)}
-                    className="h-6 px-2 text-xs"
+                    className="h-8 px-3 text-xs"
                   >
                     <BookOpen className="w-3 h-3 mr-1" />
                     saved
+                    {showPrompts ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
                   </Button>
 
-                  <Button variant="ghost" size="sm" onClick={() => setShowCost(!showCost)} className="h-6 px-2 text-xs">
+                  <Button variant="ghost" size="sm" onClick={() => setShowCost(!showCost)} className="h-8 px-3 text-xs">
                     <DollarSign className="w-3 h-3 mr-1" />
                     cost
+                    {showCost ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
                   </Button>
                 </div>
               </div>
@@ -404,14 +339,37 @@ export default function Home() {
               </div>
             )}
 
+            {showSettings && (
+              <div className="border border-border rounded-md p-4 bg-muted/10">
+                <GenerationSettings
+                  aspectRatio={aspectRatio}
+                  numImages={numImages}
+                  model={model}
+                  seed={seed}
+                  maxImages={maxImages}
+                  syncMode={syncMode}
+                  enableSafetyChecker={enableSafetyChecker}
+                  customWidth={customWidth}
+                  customHeight={customHeight}
+                  onAspectRatioChange={setAspectRatio}
+                  onNumImagesChange={setNumImages}
+                  onModelChange={setModel}
+                  onSeedChange={setSeed}
+                  onMaxImagesChange={setMaxImages}
+                  onSyncModeChange={setSyncMode}
+                  onSafetyCheckerChange={setEnableSafetyChecker}
+                  onCustomSizeChange={handleCustomSizeChange}
+                />
+              </div>
+            )}
+
             {showPresets && (
               <div className="border border-border rounded-md p-4 bg-muted/10">
                 <StylePresets
                   onApplyPreset={handleApplyPreset}
                   currentSettings={{
                     model,
-                    width,
-                    height,
+                    aspectRatio,
                     seed,
                     enableSafetyChecker,
                     syncMode,
