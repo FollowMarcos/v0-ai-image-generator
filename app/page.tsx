@@ -214,10 +214,12 @@ export default function Home() {
 
       uploadedImages.forEach((_, index) => {
         const reference = `@img${index + 1}`
-        if (processedPrompt.includes(reference)) {
-          processedPrompt = processedPrompt.replace(new RegExp(reference, "g"), `[uploaded image ${index + 1}]`)
-        }
+        // Remove the @img reference entirely since fal API uses image_urls parameter
+        processedPrompt = processedPrompt.replace(new RegExp(reference, "g"), "").trim()
       })
+
+      // Clean up any double spaces left from removing references
+      processedPrompt = processedPrompt.replace(/\s+/g, " ").trim()
 
       console.log("[v0] Processed prompt:", processedPrompt)
       console.log("[v0] Image URLs count:", imageUrls.length)
