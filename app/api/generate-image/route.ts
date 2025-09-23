@@ -1,10 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
-import * as fal from "@fal-ai/serverless-client"
 
 // Configure fal client
-fal.config({
-  credentials: process.env.FAL_KEY,
-})
+// Removed fal.config as it's no longer needed
 
 async function getImageDimensions(imageUrl: string): Promise<{ width: number; height: number } | null> {
   try {
@@ -76,13 +73,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Prompt is required" }, { status: 400 })
     }
 
-    console.log("[v0] FAL_KEY exists:", !!process.env.FAL_KEY)
-    console.log("[v0] FAL_KEY length:", process.env.FAL_KEY?.length || 0)
+    console.log("[v0] FREEPIK_API_KEY exists:", !!process.env.FREEPIK_API_KEY)
+    console.log("[v0] FREEPIK_API_KEY length:", process.env.FREEPIK_API_KEY?.length || 0)
 
-    if (!process.env.FAL_KEY) {
-      console.error("[v0] FAL_KEY environment variable is not set")
+    if (!process.env.FREEPIK_API_KEY) {
+      console.error("[v0] FREEPIK_API_KEY environment variable is not set")
       return NextResponse.json(
-        { error: "API configuration error. Please check your fal integration." },
+        { error: "API configuration error. Please add FREEPIK_API_KEY to your environment variables." },
         { status: 500 },
       )
     }
@@ -91,14 +88,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Image upload is required for image editing" }, { status: 400 })
     }
 
-    const modelEndpoint = "fal-ai/flux/dev/image-to-image"
+    const apiEndpoint = "https://api.freepik.com/v1/ai/text-to-image/seedream-v4-edit"
 
     const getImageSize = (ratio: string, customW?: number, customH?: number) => {
       if (ratio === "custom" && customW && customH) {
         return { width: customW, height: customH }
       }
 
-      // Use standard FLUX dimensions
+      // Use standard dimensions for Seedream 4
       switch (ratio) {
         case "1:1":
         case "square":
@@ -125,57 +122,68 @@ export async function POST(request: NextRequest) {
         case "landscape_21_9":
           return { width: 1568, height: 672 }
         default:
-          return { width: 1024, height: 1024 } // Default to square
+          return { width: 1024, height: 1024 }
       }
     }
 
-    const input: any = {
+    const requestBody = {
       prompt,
-      image_url: imageUrls[0], // FLUX uses single image_url instead of image_urls array
+      image: imageUrls[0], // Seedream 4 Edit uses 'image' parameter for the input image
       ...getImageSize(aspectRatio || "1:1", customWidth, customHeight),
       num_images: numImages || 1,
-      guidance_scale: 3.5,
-      num_inference_steps: 28,
-      strength: 0.95,
       enable_safety_checker: enableSafetyChecker !== false,
     }
 
     if (seed !== undefined && seed !== null) {
-      input.seed = seed
+      requestBody.seed = seed
     }
 
-    console.log("[v0] Calling FAL API with:", { modelEndpoint, input })
-    console.log("[v0] FAL client config:", { hasCredentials: !!process.env.FAL_KEY })
+    console.log("[v0] Calling Freepik API with:", { apiEndpoint, requestBody })
 
     let result
     try {
-      console.log("[v0] About to call fal.subscribe...")
-      result = await Promise.race([
-        fal.subscribe(modelEndpoint, {
-          input,
-          logs: true,
-          onQueueUpdate: (update) => {
-            console.log("[v0] Queue update:", update.status)
-            if (update.status === "IN_PROGRESS") {
-              console.log(
-                "[v0] Generation in progress:",
-                update.logs?.map((log) => log.message),
-              )
-            }
-          },
-        }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("Request timeout after 5 minutes")), 300000)),
-      ])
-      console.log("[v0] fal.subscribe completed successfully")
-    } catch (falError) {
-      console.error("[v0] FAL API error details:", {
-        message: falError instanceof Error ? falError.message : String(falError),
-        stack: falError instanceof Error ? falError.stack : undefined,
-        name: falError instanceof Error ? falError.name : undefined,
+      console.log("[v0] About to call Freepik API...")
+
+      const response = await fetch(apiEndpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-freepik-api-key": process.env.FREEPIK_API_KEY,
+        },
+        body: JSON.stringify(requestBody),
       })
 
-      if (falError instanceof Error) {
-        const errorStr = falError.message.toLowerCase()
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error("[v0] Freepik API error response:", {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText,
+        })
+
+        if (response.status === 403 || response.status === 401) {
+          return NextResponse.json(
+            {
+              error: "Authentication failed. Please check your Freepik API key in environment variables.",
+            },
+            { status: 403 },
+          )
+        }
+
+        throw new Error(`Freepik API error: ${response.status} ${response.statusText} - ${errorText}`)
+      }
+
+      result = await response.json()
+      console.log("[v0] Freepik API completed successfully")
+    } catch (freepikError) {
+      console.error("[v0] Freepik API error details:", {
+        message: freepikError instanceof Error ? freepikError.message : String(freepikError),
+        stack: freepikError instanceof Error ? freepikError.stack : undefined,
+        name: freepikError instanceof Error ? freepikError.name : undefined,
+      })
+
+      if (freepikError instanceof Error) {
+        const errorStr = freepikError.message.toLowerCase()
 
         if (
           errorStr.includes("forbidden") ||
@@ -184,7 +192,7 @@ export async function POST(request: NextRequest) {
         ) {
           return NextResponse.json(
             {
-              error: "Authentication failed. Please check your fal integration in Project Settings.",
+              error: "Authentication failed. Please check your Freepik API key in environment variables.",
             },
             { status: 403 },
           )
@@ -202,7 +210,7 @@ export async function POST(request: NextRequest) {
         if (errorStr.includes("quota") || errorStr.includes("limit")) {
           return NextResponse.json(
             {
-              error: "API quota exceeded. Please check your FAL account limits.",
+              error: "API quota exceeded. Please check your Freepik account limits.",
             },
             { status: 429 },
           )
@@ -218,13 +226,12 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Re-throw to be caught by outer try-catch
-      throw falError
+      throw freepikError
     }
 
-    console.log("[v0] FAL API result:", result)
+    console.log("[v0] Freepik API result:", result)
 
-    const generatedImages = result.images || []
+    const generatedImages = result.images || result.data?.images || []
 
     if (generatedImages.length === 0) {
       throw new Error("No images generated")
@@ -232,14 +239,15 @@ export async function POST(request: NextRequest) {
 
     const imagesWithDimensions = await Promise.all(
       generatedImages.map(async (img: any, index: number) => {
-        const dimensions = await getImageDimensions(img.url)
+        const imageUrl = img.url || img.image_url || img
+        const dimensions = await getImageDimensions(imageUrl)
         console.log(
           `[v0] Generated image ${index + 1} actual dimensions:`,
           dimensions ? `${dimensions.width} x ${dimensions.height}` : "Could not determine",
         )
 
         return {
-          ...img,
+          url: imageUrl,
           width: dimensions?.width || null,
           height: dimensions?.height || null,
         }
@@ -248,7 +256,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       images: imagesWithDimensions,
-      seed: result.seed,
+      seed: result.seed || result.data?.seed,
       numImagesGenerated: imagesWithDimensions.length,
     })
   } catch (error) {
@@ -263,13 +271,13 @@ export async function POST(request: NextRequest) {
       const errorStr = error.message.toLowerCase()
 
       if (errorStr.includes("forbidden") || errorStr.includes("unauthorized")) {
-        errorMessage = "Authentication failed. Please check your fal integration in Project Settings."
+        errorMessage = "Authentication failed. Please add FREEPIK_API_KEY to your environment variables."
       } else if (errorStr.includes("file too large") || errorStr.includes("size limit")) {
         errorMessage = "Image file is too large. Please use images under 10MB for best results."
       } else if (errorStr.includes("invalid image") || errorStr.includes("unsupported format")) {
         errorMessage = "Invalid image format. Please use JPG, PNG, or WebP images."
       } else if (errorStr.includes("quota") || errorStr.includes("limit exceeded")) {
-        errorMessage = "Generation limit reached. Please check your Vercel dashboard for usage details."
+        errorMessage = "Generation limit reached. Please check your Freepik account for usage details."
       } else if (errorStr.includes("safety") || errorStr.includes("content policy")) {
         errorMessage = "Content blocked by safety checker. Please try a different prompt or image."
       } else if (errorStr.includes("timeout")) {
