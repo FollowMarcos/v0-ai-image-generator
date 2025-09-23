@@ -231,9 +231,37 @@ export async function POST(request: NextRequest) {
 
     console.log("[v0] Freepik API result:", result)
 
-    const generatedImages = result.images || result.data?.images || []
+    console.log("[v0] Full Freepik API response structure:", JSON.stringify(result, null, 2))
+    console.log("[v0] Response keys:", Object.keys(result || {}))
+
+    let generatedImages = []
+
+    if (result.images) {
+      generatedImages = result.images
+      console.log("[v0] Found images in result.images")
+    } else if (result.data?.images) {
+      generatedImages = result.data.images
+      console.log("[v0] Found images in result.data.images")
+    } else if (result.data) {
+      generatedImages = Array.isArray(result.data) ? result.data : [result.data]
+      console.log("[v0] Using result.data as images array")
+    } else if (result.url) {
+      generatedImages = [{ url: result.url }]
+      console.log("[v0] Found single image URL in result.url")
+    } else if (result.image_url) {
+      generatedImages = [{ url: result.image_url }]
+      console.log("[v0] Found single image URL in result.image_url")
+    } else if (Array.isArray(result)) {
+      generatedImages = result
+      console.log("[v0] Result is an array, using directly")
+    } else {
+      console.log("[v0] Could not find images in response, available keys:", Object.keys(result || {}))
+    }
+
+    console.log("[v0] Extracted images:", generatedImages)
 
     if (generatedImages.length === 0) {
+      console.error("[v0] No images found in response. Full response:", result)
       throw new Error("No images generated")
     }
 
