@@ -11,6 +11,9 @@ importers:
       '@fal-ai/client':
         specifier: latest
         version: 1.6.2
+      '@fal-ai/serverless-client':
+        specifier: latest
+        version: 0.15.0
       '@hookform/resolvers':
         specifier: ^3.10.0
         version: 3.10.0(react-hook-form@7.60.0(react@18.0.0))
@@ -209,6 +212,10 @@ packages:
 
   '@fal-ai/client@1.6.2':
     resolution: {integrity: sha512-y89jNGAZUpvt+IZfsIczULN95fGQlPxTt2c9bNFWkKe6OBnhOY+qHHH7IO4XgCsbmCwgfzzaSHUItx1nQ3ifHQ==}
+    engines: {node: '>=18.0.0'}
+
+  '@fal-ai/serverless-client@0.15.0':
+    resolution: {integrity: sha512-4Vuocu0342OijAN6xO/lwohDV7h90LbkTnOAEwH+pYvMFVC6RYmHS4GILc/wnOWBTw+iFlZFEKlljEVolkjVfg==}
     engines: {node: '>=18.0.0'}
 
   '@floating-ui/core@1.7.3':
@@ -1897,6 +1904,12 @@ snapshots:
   '@date-fns/tz@1.2.0': {}
 
   '@fal-ai/client@1.6.2':
+    dependencies:
+      '@msgpack/msgpack': 3.1.2
+      eventsource-parser: 1.1.2
+      robot3: 0.4.1
+
+  '@fal-ai/serverless-client@0.15.0':
     dependencies:
       '@msgpack/msgpack': 3.1.2
       eventsource-parser: 1.1.2

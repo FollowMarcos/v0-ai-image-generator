@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { fal } from "@fal-ai/client"
+import * as fal from "@fal-ai/serverless-client"
 
 // Configure fal client
 fal.config({
@@ -76,6 +76,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Prompt is required" }, { status: 400 })
     }
 
+    if (!process.env.FAL_KEY) {
+      console.error("[v0] FAL_KEY environment variable is not set")
+      return NextResponse.json(
+        { error: "API configuration error. Please check your fal integration." },
+        { status: 500 },
+      )
+    }
+
     if (!imageUrls || !Array.isArray(imageUrls) || imageUrls.length === 0) {
       return NextResponse.json({ error: "Image upload is required for image editing" }, { status: 400 })
     }
@@ -120,12 +128,11 @@ export async function POST(request: NextRequest) {
 
     const input: any = {
       prompt,
+      image_urls: imageUrls,
       image_size: getImageSize(aspectRatio || "1:1", customWidth, customHeight),
       num_images: numImages || 1,
-      max_images: Math.max(numImages || 1, maxImages || 1),
-      enable_safety_checker: enableSafetyChecker !== false, // Default to true
+      enable_safety_checker: enableSafetyChecker !== false,
       sync_mode: syncMode || false,
-      image_urls: imageUrls,
     }
 
     if (seed !== undefined && seed !== null) {
@@ -133,8 +140,6 @@ export async function POST(request: NextRequest) {
     }
 
     console.log("[v0] Calling FAL API with:", { modelEndpoint, input })
-    console.log("[v0] Aspect ratio requested:", aspectRatio)
-    console.log("[v0] Image size being sent:", input.image_size)
 
     let result
     try {
@@ -156,9 +161,21 @@ export async function POST(request: NextRequest) {
     } catch (falError) {
       console.error("[v0] FAL API error:", falError)
 
-      // Handle specific FAL API errors
       if (falError instanceof Error) {
         const errorStr = falError.message.toLowerCase()
+
+        if (
+          errorStr.includes("forbidden") ||
+          errorStr.includes("unauthorized") ||
+          errorStr.includes("authentication")
+        ) {
+          return NextResponse.json(
+            {
+              error: "Authentication failed. Please check your fal integration in Project Settings.",
+            },
+            { status: 403 },
+          )
+        }
 
         if (errorStr.includes("content policy") || errorStr.includes("safety") || errorStr.includes("inappropriate")) {
           return NextResponse.json(
@@ -194,7 +211,7 @@ export async function POST(request: NextRequest) {
 
     console.log("[v0] FAL API result:", result)
 
-    const generatedImages = result.data?.images || []
+    const generatedImages = result.images || []
 
     if (generatedImages.length === 0) {
       throw new Error("No images generated")
@@ -218,7 +235,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       images: imagesWithDimensions,
-      seed: result.data?.seed,
+      seed: result.seed,
       numImagesGenerated: imagesWithDimensions.length,
     })
   } catch (error) {
@@ -229,7 +246,9 @@ export async function POST(request: NextRequest) {
     if (error instanceof Error) {
       const errorStr = error.message.toLowerCase()
 
-      if (errorStr.includes("file too large") || errorStr.includes("size limit")) {
+      if (errorStr.includes("forbidden") || errorStr.includes("unauthorized")) {
+        errorMessage = "Authentication failed. Please check your fal integration in Project Settings."
+      } else if (errorStr.includes("file too large") || errorStr.includes("size limit")) {
         errorMessage = "Image file is too large. Please use images under 10MB for best results."
       } else if (errorStr.includes("invalid image") || errorStr.includes("unsupported format")) {
         errorMessage = "Invalid image format. Please use JPG, PNG, or WebP images."
