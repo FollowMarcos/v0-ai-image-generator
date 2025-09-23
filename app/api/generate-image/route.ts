@@ -213,17 +213,21 @@ export async function POST(request: NextRequest) {
 
           if (!statusResponse.ok) {
             console.error("[v0] Status check failed:", statusResponse.status, statusResponse.statusText)
+            const errorText = await statusResponse.text()
+            console.error("[v0] Status check error body:", errorText)
             break
           }
 
           const statusResult = await statusResponse.json()
           console.log(`[v0] Poll attempt ${attempts}, status:`, statusResult.data?.status)
+          console.log(`[v0] Full status result:`, statusResult)
 
           if (statusResult.data?.status === "COMPLETED" && statusResult.data?.generated?.length > 0) {
             result = statusResult
             break
           } else if (statusResult.data?.status === "FAILED") {
-            throw new Error("Image generation failed")
+            console.error("[v0] Generation failed:", statusResult.data?.error || "Unknown error")
+            throw new Error(`Image generation failed: ${statusResult.data?.error || "Unknown error"}`)
           }
         } catch (pollError) {
           console.error("[v0] Error polling for results:", pollError)
