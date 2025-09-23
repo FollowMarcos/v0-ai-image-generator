@@ -90,10 +90,23 @@ export async function POST(request: NextRequest) {
 
     const apiEndpoint = "https://api.freepik.com/v1/ai/text-to-image/seedream-v4-edit"
 
+    const aspectRatioMap: Record<string, string> = {
+      "1:1": "square_1_1",
+      "16:9": "widescreen_16_9",
+      "9:16": "social_story_9_16",
+      "2:3": "portrait_2_3",
+      "3:4": "traditional_3_4",
+      "3:2": "standard_3_2",
+      "4:3": "classic_4_3",
+    }
+
+    const mappedAspectRatio = aspectRatioMap[aspectRatio] || "square_1_1"
+    console.log("[v0] Mapped aspect ratio:", aspectRatio, "->", mappedAspectRatio)
+
     const requestBody = {
       prompt,
       reference_images: imageUrls, // Use reference_images as per Freepik API docs
-      aspect_ratio: aspectRatio === "1:1" ? "square_1_1" : aspectRatio || "square_1_1",
+      aspect_ratio: mappedAspectRatio,
       guidance_scale: 2.5,
     }
 
