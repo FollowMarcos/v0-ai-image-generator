@@ -90,48 +90,11 @@ export async function POST(request: NextRequest) {
 
     const apiEndpoint = "https://api.freepik.com/v1/ai/text-to-image/seedream-v4-edit"
 
-    const getImageSize = (ratio: string, customW?: number, customH?: number) => {
-      if (ratio === "custom" && customW && customH) {
-        return { width: customW, height: customH }
-      }
-
-      // Use standard dimensions for Seedream 4
-      switch (ratio) {
-        case "1:1":
-        case "square":
-          return { width: 1024, height: 1024 }
-        case "4:3":
-        case "landscape_4_3":
-          return { width: 1152, height: 896 }
-        case "3:4":
-        case "portrait_4_3":
-          return { width: 896, height: 1152 }
-        case "16:9":
-        case "landscape_16_9":
-          return { width: 1344, height: 768 }
-        case "9:16":
-        case "portrait_16_9":
-          return { width: 768, height: 1344 }
-        case "3:2":
-        case "landscape_3_2":
-          return { width: 1216, height: 832 }
-        case "2:3":
-        case "portrait_3_2":
-          return { width: 832, height: 1216 }
-        case "21:9":
-        case "landscape_21_9":
-          return { width: 1568, height: 672 }
-        default:
-          return { width: 1024, height: 1024 }
-      }
-    }
-
     const requestBody = {
       prompt,
-      image: imageUrls[0], // Seedream 4 Edit uses 'image' parameter for the input image
-      ...getImageSize(aspectRatio || "1:1", customWidth, customHeight),
-      num_images: numImages || 1,
-      enable_safety_checker: enableSafetyChecker !== false,
+      reference_images: imageUrls, // Use reference_images as per Freepik API docs
+      aspect_ratio: aspectRatio === "1:1" ? "square_1_1" : aspectRatio || "square_1_1",
+      guidance_scale: 2.5,
     }
 
     if (seed !== undefined && seed !== null) {
@@ -174,7 +137,7 @@ export async function POST(request: NextRequest) {
       }
 
       result = await response.json()
-      console.log("[v0] Freepik API completed successfully")
+      console.log("[v0] Freepik API initial response:", result)
     } catch (freepikError) {
       console.error("[v0] Freepik API error details:", {
         message: freepikError instanceof Error ? freepikError.message : String(freepikError),
@@ -229,33 +192,65 @@ export async function POST(request: NextRequest) {
       throw freepikError
     }
 
-    console.log("[v0] Freepik API result:", result)
+    if (result.data?.task_id && result.data?.status === "IN_PROGRESS") {
+      const taskId = result.data.task_id
+      console.log("[v0] Task started, polling for results. Task ID:", taskId)
 
-    console.log("[v0] Full Freepik API response structure:", JSON.stringify(result, null, 2))
-    console.log("[v0] Response keys:", Object.keys(result || {}))
+      const maxAttempts = 30 // 30 attempts = ~60 seconds max wait time
+      let attempts = 0
+
+      while (attempts < maxAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, 2000)) // Wait 2 seconds between polls
+        attempts++
+
+        try {
+          const statusResponse = await fetch(`https://api.freepik.com/v1/ai/text-to-image/seedream-v4-edit/${taskId}`, {
+            method: "GET",
+            headers: {
+              "x-freepik-api-key": process.env.FREEPIK_API_KEY,
+            },
+          })
+
+          if (!statusResponse.ok) {
+            console.error("[v0] Status check failed:", statusResponse.status, statusResponse.statusText)
+            break
+          }
+
+          const statusResult = await statusResponse.json()
+          console.log(`[v0] Poll attempt ${attempts}, status:`, statusResult.data?.status)
+
+          if (statusResult.data?.status === "COMPLETED" && statusResult.data?.generated?.length > 0) {
+            result = statusResult
+            break
+          } else if (statusResult.data?.status === "FAILED") {
+            throw new Error("Image generation failed")
+          }
+        } catch (pollError) {
+          console.error("[v0] Error polling for results:", pollError)
+          break
+        }
+      }
+
+      if (attempts >= maxAttempts) {
+        throw new Error("Image generation timed out. Please try again.")
+      }
+    }
+
+    console.log("[v0] Final Freepik API result:", result)
 
     let generatedImages = []
 
-    if (result.images) {
+    if (result.data?.generated && Array.isArray(result.data.generated)) {
+      generatedImages = result.data.generated
+      console.log("[v0] Found images in result.data.generated")
+    } else if (result.images) {
       generatedImages = result.images
       console.log("[v0] Found images in result.images")
     } else if (result.data?.images) {
       generatedImages = result.data.images
       console.log("[v0] Found images in result.data.images")
-    } else if (result.data) {
-      generatedImages = Array.isArray(result.data) ? result.data : [result.data]
-      console.log("[v0] Using result.data as images array")
-    } else if (result.url) {
-      generatedImages = [{ url: result.url }]
-      console.log("[v0] Found single image URL in result.url")
-    } else if (result.image_url) {
-      generatedImages = [{ url: result.image_url }]
-      console.log("[v0] Found single image URL in result.image_url")
-    } else if (Array.isArray(result)) {
-      generatedImages = result
-      console.log("[v0] Result is an array, using directly")
     } else {
-      console.log("[v0] Could not find images in response, available keys:", Object.keys(result || {}))
+      console.log("[v0] Could not find images in response, available keys:", Object.keys(result?.data || result || {}))
     }
 
     console.log("[v0] Extracted images:", generatedImages)
@@ -284,7 +279,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       images: imagesWithDimensions,
-      seed: result.seed || result.data?.seed,
+      seed: result.data?.seed || result.seed,
       numImagesGenerated: imagesWithDimensions.length,
     })
   } catch (error) {
