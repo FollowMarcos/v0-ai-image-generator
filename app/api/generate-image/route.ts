@@ -76,6 +76,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Prompt is required" }, { status: 400 })
     }
 
+    console.log("[v0] FAL_KEY exists:", !!process.env.FAL_KEY)
+    console.log("[v0] FAL_KEY length:", process.env.FAL_KEY?.length || 0)
+
     if (!process.env.FAL_KEY) {
       console.error("[v0] FAL_KEY environment variable is not set")
       return NextResponse.json(
@@ -140,14 +143,17 @@ export async function POST(request: NextRequest) {
     }
 
     console.log("[v0] Calling FAL API with:", { modelEndpoint, input })
+    console.log("[v0] FAL client config:", { hasCredentials: !!process.env.FAL_KEY })
 
     let result
     try {
+      console.log("[v0] About to call fal.subscribe...")
       result = await Promise.race([
         fal.subscribe(modelEndpoint, {
           input,
           logs: true,
           onQueueUpdate: (update) => {
+            console.log("[v0] Queue update:", update.status)
             if (update.status === "IN_PROGRESS") {
               console.log(
                 "[v0] Generation in progress:",
@@ -158,8 +164,13 @@ export async function POST(request: NextRequest) {
         }),
         new Promise((_, reject) => setTimeout(() => reject(new Error("Request timeout after 5 minutes")), 300000)),
       ])
+      console.log("[v0] fal.subscribe completed successfully")
     } catch (falError) {
-      console.error("[v0] FAL API error:", falError)
+      console.error("[v0] FAL API error details:", {
+        message: falError instanceof Error ? falError.message : String(falError),
+        stack: falError instanceof Error ? falError.stack : undefined,
+        name: falError instanceof Error ? falError.name : undefined,
+      })
 
       if (falError instanceof Error) {
         const errorStr = falError.message.toLowerCase()
@@ -239,7 +250,10 @@ export async function POST(request: NextRequest) {
       numImagesGenerated: imagesWithDimensions.length,
     })
   } catch (error) {
-    console.error("[v0] Error generating image:", error)
+    console.error("[v0] Outer catch - Error generating image:", {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    })
 
     let errorMessage = "Failed to generate image"
 
