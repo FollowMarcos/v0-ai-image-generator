@@ -91,51 +91,53 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Image upload is required for image editing" }, { status: 400 })
     }
 
-    const modelEndpoint = "fal-ai/bytedance/seedream/v4/edit"
+    const modelEndpoint = "fal-ai/flux/dev/image-to-image"
 
     const getImageSize = (ratio: string, customW?: number, customH?: number) => {
       if (ratio === "custom" && customW && customH) {
         return { width: customW, height: customH }
       }
 
-      // Use SeeDream recommended dimensions
+      // Use standard FLUX dimensions
       switch (ratio) {
         case "1:1":
         case "square":
-          return { width: 2048, height: 2048 }
+          return { width: 1024, height: 1024 }
         case "4:3":
         case "landscape_4_3":
-          return { width: 2304, height: 1728 }
+          return { width: 1152, height: 896 }
         case "3:4":
         case "portrait_4_3":
-          return { width: 1728, height: 2304 }
+          return { width: 896, height: 1152 }
         case "16:9":
         case "landscape_16_9":
-          return { width: 2560, height: 1440 }
+          return { width: 1344, height: 768 }
         case "9:16":
         case "portrait_16_9":
-          return { width: 1440, height: 2560 }
+          return { width: 768, height: 1344 }
         case "3:2":
         case "landscape_3_2":
-          return { width: 2496, height: 1664 }
+          return { width: 1216, height: 832 }
         case "2:3":
         case "portrait_3_2":
-          return { width: 1664, height: 2496 }
+          return { width: 832, height: 1216 }
         case "21:9":
         case "landscape_21_9":
-          return { width: 3024, height: 1296 }
+          return { width: 1568, height: 672 }
         default:
-          return { width: 2048, height: 2048 } // Default to square
+          return { width: 1024, height: 1024 } // Default to square
       }
     }
 
     const input: any = {
       prompt,
-      image_urls: imageUrls,
-      image_size: getImageSize(aspectRatio || "1:1", customWidth, customHeight),
+      image_url: imageUrls[0], // FLUX uses single image_url instead of image_urls array
+      ...getImageSize(aspectRatio || "1:1", customWidth, customHeight),
       num_images: numImages || 1,
+      guidance_scale: 3.5,
+      num_inference_steps: 28,
+      strength: 0.95,
       enable_safety_checker: enableSafetyChecker !== false,
-      sync_mode: syncMode || false,
     }
 
     if (seed !== undefined && seed !== null) {
